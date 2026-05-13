@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chapter 4 互动网页｜21世纪设计的新角色</title>
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg-2:#0d1b2f;
+      --panel:rgba(255,255,255,.08);
+      --panel-2:rgba(255,255,255,.05);
+      --text:#eef4ff;
+      --muted:#b8c6e6;
+      --line:rgba(255,255,255,.12);
+      --accent:#7de2ff;
+      --accent-2:#8a7dff;
+      --accent-3:#7df0ba;
+      --danger:#ff9e80;
+      --shadow:0 10px 35px rgba(0,0,0,.28);
+      --radius:22px;
+      --max:1180px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(125,226,255,.16), transparent 30%),
+        radial-gradient(circle at 90% 10%, rgba(138,125,255,.18), transparent 26%),
+        linear-gradient(180deg,var(--bg),#091627 32%, #0b1526 100%);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+    .noise::before{
+      content:"";
+      position:fixed; inset:0;
+      background-image: radial-gradient(rgba(255,255,255,.055) 1px, transparent 1px);
+      background-size: 26px 26px;
+      opacity:.2; pointer-events:none;
+      mask-image: linear-gradient(180deg,rgba(0,0,0,.7),transparent 92%);
+      z-index:0;
+    }
+    .progress{
+      position:fixed; top:0; left:0; height:4px; width:0;
+      background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      box-shadow:0 0 22px rgba(125,226,255,.7);
+      z-index:1000;
+    }
+    .side-nav{
+      position:fixed; right:20px; top:50%; transform:translateY(-50%);
+      display:flex; flex-direction:column; gap:10px; z-index:100;
+    }
+    .dot{
+      width:13px; height:13px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.4);
+      background:rgba(255,255,255,.08);
+      cursor:pointer; transition:.25s ease;
+      position:relative;
+    }
+    .dot:hover,.dot.active{ background:var(--accent); border-color:var(--accent); transform:scale(1.15)}
+    .dot span{
+      position:absolute; right:22px; top:50%; transform:translateY(-50%);
+      white-space:nowrap; font-size:12px; color:var(--muted);
+      background:rgba(5,9,17,.8); padding:8px 10px; border-radius:999px; border:1px solid var(--line);
+      opacity:0; pointer-events:none; transition:.2s; backdrop-filter: blur(8px);
+    }
+    .dot:hover span{opacity:1}
+
+    .wrap{position:relative; z-index:1}
+    section{padding:90px 24px}
+    .container{max-width:var(--max); margin:0 auto}
+    .hero{min-height:100vh; display:flex; align-items:center; padding-top:64px; position:relative}
+    .hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:28px; align-items:center}
+    .eyebrow{
+      display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:999px;
+      background:rgba(255,255,255,.08); border:1px solid var(--line); color:#d9ebff; font-size:13px; letter-spacing:.04em;
+      backdrop-filter: blur(14px);
+    }
+    .eyebrow::before{content:""; width:8px; height:8px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 8px rgba(125,226,255,.14)}
+    h1{font-size:clamp(42px,7vw,78px); line-height:.95; margin:18px 0 18px; letter-spacing:-.04em}
+    .hero p{font-size:18px; line-height:1.75; color:var(--muted); max-width:62ch}
+    .cta-row{display:flex; gap:14px; flex-wrap:wrap; margin-top:30px}
+    .btn{
+      display:inline-flex; align-items:center; gap:10px; text-decoration:none; color:#06101d; background:linear-gradient(135deg,var(--accent),#c9fbff);
+      padding:14px 20px; border-radius:999px; font-weight:700; box-shadow: var(--shadow);
+      transition:transform .25s ease, box-shadow .25s ease;
+    }
+    .btn:hover{transform:translateY(-2px)}
+    .btn.secondary{ background:transparent; color:var(--text); border:1px solid var(--line); box-shadow:none }
+
+    .hero-card{
+      position:relative; min-height:520px; border-radius:30px; overflow:hidden; border:1px solid rgba(255,255,255,.12);
+      background:
+        radial-gradient(circle at 75% 15%, rgba(138,125,255,.36), transparent 22%),
+        radial-gradient(circle at 25% 30%, rgba(125,226,255,.32), transparent 25%),
+        linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+    .hero-card .ring{position:absolute; inset:auto; border-radius:999px; border:1px solid rgba(255,255,255,.15); animation:float 7s ease-in-out infinite}
+    .ring.r1{width:220px; height:220px; left:24px; top:40px}
+    .ring.r2{width:340px; height:340px; right:-60px; top:30px; animation-delay:-1.4s}
+    .ring.r3{width:180px; height:180px; right:50px; bottom:38px; animation-delay:-3s}
+    .hero-steps{
+      position:absolute; left:22px; right:22px; bottom:20px; display:grid; gap:12px;
+    }
+    .mini-step{
+      background:rgba(7,13,23,.55); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:14px 16px;
+      backdrop-filter: blur(10px); transform:translateY(18px); opacity:0; animation:riseIn .7s forwards;
+    }
+    .mini-step:nth-child(2){animation-delay:.16s}
+    .mini-step:nth-child(3){animation-delay:.32s}
+    .mini-step strong{display:block; margin-bottom:4px; font-size:15px}
+    .mini-step span{font-size:13px; color:var(--muted)}
+
+    .title{font-size:clamp(30px,4vw,48px); margin:0 0 12px; letter-spacing:-.03em}
+    .sub{font-size:17px; color:var(--muted); line-height:1.8; max-width:72ch}
+
+    .insight-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:28px}
+    .insight{
+      padding:22px; background:var(--panel); border:1px solid var(--line); border-radius:22px; backdrop-filter: blur(10px);
+      box-shadow:var(--shadow);
+      transition:transform .25s ease, border-color .25s ease;
+    }
+    .insight:hover{transform:translateY(-4px); border-color:rgba(125,226,255,.45)}
+    .insight .num{font-size:13px; color:var(--accent); letter-spacing:.1em; text-transform:uppercase}
+    .insight h3{margin:10px 0 10px; font-size:23px}
+    .insight p{margin:0; color:var(--muted); line-height:1.75}
+
+    .compare{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:30px}
+    .panel{padding:28px; background:var(--panel); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); backdrop-filter: blur(12px)}
+    .panel.old{border-color:rgba(255,158,128,.35)}
+    .panel.new{border-color:rgba(125,240,186,.35)}
+    .panel h3{margin:0 0 18px; font-size:24px}
+    ul.clean{margin:0; padding:0; list-style:none; display:grid; gap:12px}
+    ul.clean li{display:flex; gap:10px; line-height:1.6; color:var(--muted)}
+    ul.clean li::before{content:"✦"; color:var(--accent)}
+    .old ul.clean li::before{color:var(--danger)}
+    .new ul.clean li::before{color:var(--accent-3)}
+
+    .paradigm-tabs{display:grid; grid-template-columns:300px 1fr; gap:18px; margin-top:34px}
+    .tab-list{display:grid; gap:12px}
+    .tab-btn{
+      border:1px solid var(--line); background:var(--panel-2); color:var(--text); text-align:left; cursor:pointer;
+      border-radius:20px; padding:18px; transition:.25s ease; box-shadow:var(--shadow);
+    }
+    .tab-btn small{display:block; color:var(--accent); margin-bottom:6px; letter-spacing:.08em; text-transform:uppercase}
+    .tab-btn strong{font-size:20px}
+    .tab-btn.active,.tab-btn:hover{background:rgba(125,226,255,.14); border-color:rgba(125,226,255,.4); transform:translateX(4px)}
+    .tab-panel{padding:30px; min-height:370px; background:var(--panel); border:1px solid var(--line); border-radius:26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+    .tab-panel::after{
+      content:""; position:absolute; width:260px; height:260px; border-radius:999px; right:-80px; top:-80px;
+      background:radial-gradient(circle, rgba(125,226,255,.15), transparent 72%);
+    }
+    .tab-panel h3{font-size:34px; margin:0 0 12px}
+    .tab-panel p{color:var(--muted); line-height:1.88; font-size:16px}
+    .tag-row{display:flex; gap:10px; flex-wrap:wrap; margin:18px 0}
+    .tag{padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid var(--line); color:#dbe7ff; font-size:13px}
+    .example-box{margin-top:18px; padding:18px; border-radius:18px; background:rgba(0,0,0,.18); border:1px dashed rgba(255,255,255,.16)}
+    .example-box strong{display:block; margin-bottom:8px}
+
+    .ladder{margin-top:30px; padding:24px; border-radius:26px; background:var(--panel); border:1px solid var(--line); box-shadow:var(--shadow)}
+    .ladder-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; align-items:end}
+    .step-col{position:relative; padding-top:24px}
+    .bar{height:var(--h); border-radius:18px 18px 10px 10px; background:linear-gradient(180deg, rgba(125,226,255,.95), rgba(138,125,255,.6)); box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 8px 24px rgba(125,226,255,.12)}
+    .bar.oldbar{background:linear-gradient(180deg, rgba(255,158,128,.85), rgba(255,120,120,.6))}
+    .step-col span{display:block; margin-top:12px; color:var(--muted); font-size:13px; line-height:1.4}
+    .step-col .cap{position:absolute; top:0; left:0; font-size:12px; color:var(--accent)}
+
+    .journey{margin-top:30px}
+    .journey-nav{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px}
+    .jbtn{
+      padding:10px 14px; background:rgba(255,255,255,.06); color:var(--text); border:1px solid var(--line); border-radius:999px; cursor:pointer
+    }
+    .jbtn.active{background:rgba(125,226,255,.18); border-color:rgba(125,226,255,.4)}
+    .journey-panel{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:stretch}
+    .scene,.explain{background:var(--panel); border:1px solid var(--line); border-radius:26px; padding:24px; box-shadow:var(--shadow)}
+
+    .continuum{position:relative; height:96px; margin:32px 0 14px}
+    .track{position:absolute; top:48px; left:20px; right:20px; height:4px; border-radius:999px; background:linear-gradient(90deg, #4da0ff, #7de2ff, #8a7dff, #df7dff)}
+    .node{
+      --x:0%;
+      position:absolute; top:33px; left:var(--x); transform:translateX(-50%);
+      width:34px; height:34px; border-radius:999px; border:2px solid rgba(255,255,255,.85); background:rgba(7,17,31,.92);
+      box-shadow:0 0 0 8px rgba(125,226,255,.08); cursor:pointer; transition:.25s;
+    }
+    .node:hover,.node.active{background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 12px rgba(125,226,255,.12)}
+    .label{
+      position:absolute; top:0; left:var(--x); transform:translateX(-50%); width:120px; text-align:center;
+      font-size:12px; color:var(--muted); line-height:1.35;
+    }
+    .legend{display:flex; justify-content:space-between; color:var(--muted); font-size:13px}
+    .mr-card{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:20px}
+    .box{padding:22px; background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:22px}
+    .box h4{margin:0 0 10px; font-size:22px}
+    .box p{margin:0; color:var(--muted); line-height:1.8}
+    .mini-list{margin-top:12px; display:grid; gap:8px}
+    .mini-list div{padding:10px 12px; border-radius:14px; background:rgba(0,0,0,.16); color:#dbe7ff; font-size:14px}
+
+    .problem-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:28px}
+    .wicked-wheel{
+      min-height:430px; position:relative; background:var(--panel); border:1px solid var(--line); border-radius:30px; box-shadow:var(--shadow); overflow:hidden
+    }
+    .core{
+      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      width:170px; height:170px; border-radius:50%; display:flex; align-items:center; justify-content:center; text-align:center;
+      padding:18px; background:linear-gradient(180deg, rgba(125,226,255,.18), rgba(138,125,255,.2)); border:1px solid rgba(255,255,255,.22);
+      box-shadow:0 0 60px rgba(125,226,255,.1);
+    }
+    .orbit-item{
+      position:absolute; width:132px; min-height:70px; padding:14px; border-radius:18px; text-align:center;
+      background:rgba(255,255,255,.06); border:1px solid var(--line); color:#e9f2ff; font-size:14px; line-height:1.45;
+      animation:float 7s ease-in-out infinite;
+    }
+    .orbit-item:nth-child(2){left:10%; top:18%}
+    .orbit-item:nth-child(3){left:40%; top:6%; animation-delay:-1s}
+    .orbit-item:nth-child(4){right:10%; top:18%; animation-delay:-2.2s}
+    .orbit-item:nth-child(5){right:6%; bottom:26%; animation-delay:-3s}
+    .orbit-item:nth-child(6){left:42%; bottom:8%; animation-delay:-4.1s}
+    .orbit-item:nth-child(7){left:5%; bottom:28%; animation-delay:-5.3s}
+    .problem-panel{background:var(--panel); border:1px solid var(--line); border-radius:30px; padding:26px; box-shadow:var(--shadow)}
+    .pills{display:flex; flex-wrap:wrap; gap:10px; margin:16px 0 18px}
+    .pill{padding:10px 12px; background:rgba(125,226,255,.12); border:1px solid rgba(125,226,255,.28); color:#e9f8ff; border-radius:999px; font-size:13px; cursor:pointer}
+    .pill.active{background:rgba(138,125,255,.2); border-color:rgba(138,125,255,.4)}
+    .explain-card{padding:18px; border-radius:18px; background:rgba(0,0,0,.18); border:1px dashed rgba(255,255,255,.15)}
+    .explain-card h4{margin:0 0 10px; font-size:22px}
+    .explain-card p{margin:0; color:var(--muted); line-height:1.85}
+
+    .ethics{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:20px
+    }
+    .ethic{padding:18px; background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow)}
+    .ethic h4{margin:0 0 8px; font-size:19px}
+    .ethic p{margin:0; color:var(--muted); line-height:1.75; font-size:14px}
+
+    .recap-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-top:28px}
+    .recap{padding:20px; border-radius:22px; background:var(--panel); border:1px solid var(--line); position:relative; box-shadow:var(--shadow)}
+    .recap::after{content:"→"; position:absolute; right:-10px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,.25); font-size:28px}
+    .recap:last-child::after{display:none}
+    .recap b{display:block; margin-bottom:8px; font-size:18px}
+    .recap span{color:var(--muted); line-height:1.65; font-size:14px}
+
+    .question-box{margin-top:34px; padding:28px; border-radius:28px; background:linear-gradient(180deg, rgba(125,226,255,.12), rgba(138,125,255,.1)); border:1px solid rgba(125,226,255,.25); box-shadow:var(--shadow)}
+    .question-box h3{font-size:28px; margin:0 0 10px}
+    .question-box p{margin:0; color:#eef7ff; line-height:1.8; font-size:18px}
+
+    .footer{padding:30px 24px 60px; color:var(--muted); font-size:13px; text-align:center}
+    .small{font-size:13px; color:var(--muted)}
+    .muted{color:var(--muted)}
+
+    .reveal{opacity:0; transform:translateY(26px); transition:all .8s ease}
+    .reveal.visible{opacity:1; transform:none}
+
+    @keyframes float{50%{transform:translateY(-10px)}}
+    @keyframes riseIn{to{opacity:1; transform:translateY(0)}}
+
+    @media (max-width: 1080px){
+      .hero-grid,.journey-panel,.problem-grid,.mr-card,.paradigm-tabs,.insight-grid,.compare,.ethics,.recap-grid{grid-template-columns:1fr}
+      .ladder-grid{grid-template-columns:repeat(3,1fr)}
+      .side-nav{display:none}
+      .hero-card{min-height:420px}
+      .recap::after{display:none}
+    }
+    @media (max-width: 720px){
+      section{padding:72px 18px}
+      .hero{min-height:auto; padding-top:86px}
+      .hero p,.sub{font-size:16px}
+      .hero-card{min-height:360px}
+      .ladder-grid{grid-template-columns:repeat(2,1fr)}
+      .continuum{height:140px}
+      .track{top:70px}
+      .node{top:55px}
+      .label{width:92px; font-size:11px}
+      .ethics{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body class="noise">
+  <div class="progress" id="progress"></div>
+
+  <div class="side-nav" id="sideNav">
+    <a class="dot" href="#hero"><span>封面</span></a>
+    <a class="dot" href="#core"><span>核心意思</span></a>
+    <a class="dot" href="#four"><span>四个新范式</span></a>
+    <a class="dot" href="#vr"><span>VR / AR</span></a>
+    <a class="dot" href="#wicked"><span>Wicked Problems</span></a>
+    <a class="dot" href="#recap"><span>复盘</span></a>
+  </div>
+
+  <div class="wrap">
+    <section class="hero" id="hero">
+      <div class="container hero-grid">
+        <div class="reveal visible">
+          <div class="eyebrow">Chapter 4 · A New Role for Design in the 21st Century</div>
+          <h1>21世纪设计<br>不只是“做东西”</h1>
+          <p>
+            这不是一份枯燥的翻译稿，而是一张<strong>可互动的理解地图</strong>。
+            整章真正想表达的是：设计正在从<strong>产品与造型</strong>，转向<strong>体验、系统、跨学科协作、VR/AR 交互</strong>，并最终走向<strong>复杂社会问题与伦理责任</strong>。
+          </p>
+          <div class="cta-row">
+            <a class="btn" href="#core">开始快速理解</a>
+            <a class="btn secondary" href="#question">最后的开放问题</a>
+          </div>
+        </div>
+        <div class="hero-card reveal visible">
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
+          <svg viewBox="0 0 500 500" width="100%" height="100%" aria-hidden="true">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7de2ff" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#8a7dff" stop-opacity="0.85"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#7df0ba" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="#7de2ff" stop-opacity="0.5"/>
+              </linearGradient>
+            </defs>
+            <path d="M78 310 C110 170, 240 130, 306 180 S422 310, 400 360 C364 430, 182 425, 116 378 S59 366, 78 310Z" fill="url(#g1)" opacity="0.18"/>
+            <path d="M150 160 C202 98, 338 110, 380 190 S353 330, 272 330 S130 248, 150 160Z" fill="url(#g2)" opacity="0.16"/>
+            <g fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2">
+              <path d="M85 350 L160 280 L245 315 L335 230 L420 275" stroke-dasharray="7 10"/>
+              <circle cx="85" cy="350" r="8" fill="#fff"/>
+              <circle cx="160" cy="280" r="8" fill="#fff"/>
+              <circle cx="245" cy="315" r="8" fill="#fff"/>
+              <circle cx="335" cy="230" r="8" fill="#fff"/>
+              <circle cx="420" cy="275" r="8" fill="#fff"/>
+            </g>
+            <g font-size="16" fill="#eef4ff" font-weight="700">
+              <text x="68" y="380">物</text>
+              <text x="138" y="258">体验</text>
+              <text x="228" y="344">系统</text>
+              <text x="312" y="210">VR/AR</text>
+              <text x="364" y="305">责任</text>
+            </g>
+          </svg>
+          <div class="hero-steps">
+            <div class="mini-step"><strong>旧设计</strong><span>关注产品、形式、材料与功能。</span></div>
+            <div class="mini-step"><strong>新设计</strong><span>关注体验、用户、系统与协作。</span></div>
+            <div class="mini-step"><strong>更大的问题</strong><span>当设计进入 VR/AR 与社会系统，也进入伦理与责任。</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="core">
+      <div class="container">
+        <div class="reveal">
+          <h2 class="title">先抓住一句话：这章到底在讲什么？</h2>
+          <p class="sub">
+            这一章并不只是讲 VR/AR 技术，而是在讲<strong>设计角色的升级</strong>：
+            设计从“做一个产品”走向“设计一种体验、一个系统、一次协作方式，甚至一种社会干预逻辑”。
+          </p>
+        </div>
+        <div class="insight-grid">
+          <div class="insight reveal">
+            <div class="num">01 / What changed</div>
+            <h3>对象变了</h3>
+            <p>从“物品本身”转向“服务、体验、关系与系统”。一个产品的价值越来越来自它带来的体验，而不只是它的实体外形。</p>
+          </div>
+          <div class="insight reveal">
+            <div class="num">02 / Who changed</div>
+            <h3>参与者变了</h3>
+            <p>设计师不再是单独创作者，用户、专家与不同学科一起参与。设计更像组织协作，而不只是个人表达。</p>
+          </div>
+          <div class="insight reveal">
+            <div class="num">03 / Why it matters</div>
+            <h3>责任变了</h3>
+            <p>设计一旦开始影响公共生活、数字技术和社会系统，就不只关乎“好不好看”，还关乎“有没有后果”。</p>
+          </div>
+        </div>
+
+        <div class="compare reveal">
+          <div class="panel old">
+            <h3>过去常见的设计理解</h3>
+            <ul class="clean">
+              <li>重点放在造型、材料、功能与审美。</li>
+              <li>设计师像“作者”，自己提出方案。</li>
+              <li>问题常被视为明确且线性的。</li>
+              <li>关注“把东西做出来”。</li>
+            </ul>
+          </div>
+          <div class="panel new">
+            <h3>这章强调的21世纪设计</h3>
+            <ul class="clean">
+              <li>重点放在体验、系统、服务与社会影响。</li>
+              <li>设计师更像协调者、团队成员、系统思考者。</li>
+              <li>问题通常复杂、动态、没有唯一答案。</li>
+              <li>关注“如何改变行为与生活方式”。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="ladder reveal">
+          <h3 style="margin:0 0 14px;font-size:28px">整章的升级路径</h3>
+          <p class="small" style="margin:0 0 20px">你可以把本章理解成一条不断“升级”的路径。</p>
+          <div class="ladder-grid">
+            <div class="step-col"><span class="cap">Step 1</span><div class="bar oldbar" style="--h:90px"></div><span>设计物品</span></div>
+            <div class="step-col"><span class="cap">Step 2</span><div class="bar oldbar" style="--h:120px"></div><span>设计功能</span></div>
+            <div class="step-col"><span class="cap">Step 3</span><div class="bar" style="--h:155px"></div><span>设计体验</span></div>
+            <div class="step-col"><span class="cap">Step 4</span><div class="bar" style="--h:190px"></div><span>设计系统</span></div>
+            <div class="step-col"><span class="cap">Step 5</span><div class="bar" style="--h:225px"></div><span>设计真实与虚拟的关系</span></div>
+            <div class="step-col"><span class="cap">Step 6</span><div class="bar" style="--h:260px"></div><span>设计社会后果与责任</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="four">
+      <div class="container">
+        <div class="reveal">
+          <h2 class="title">四个新范式：本章最核心的理论部分</h2>
+          <p class="sub">点击左侧卡片，切换查看每个范式。读这一章最重要的不是背术语，而是理解它们共同说明：设计已经不只是产品层面的工作。</p>
+        </div>
+
+        <div class="paradigm-tabs reveal">
+          <div class="tab-list">
+            <button class="tab-btn active" data-tab="0"><small>Paradigm 01</small><strong>去物质化</strong></button>
+            <button class="tab-btn" data-tab="1"><small>Paradigm 02</small><strong>跨学科 / 超学科</strong></button>
+            <button class="tab-btn" data-tab="2"><small>Paradigm 03</small><strong>用户成为主角</strong></button>
+            <button class="tab-btn" data-tab="3"><small>Paradigm 04</small><strong>软方法论</strong></button>
+          </div>
+          <div class="tab-panel" id="tabPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vr">
+      <div class="container">
+        <div class="reveal">
+          <h2 class="title">为什么本章会讲到 VR / AR？</h2>
+          <p class="sub">
+            因为 VR/AR 是一个很好的例子：它说明<strong>技术存在</strong>，并不等于<strong>生活已经被改变</strong>。
+            只有当设计真正找到了自然、可理解、可接受、可融入日常的交互方式，技术才会进入现实生活。
+          </p>
+        </div>
+
+        <div class="journey reveal">
+          <div class="journey-nav">
+            <button class="jbtn active" data-j="0">问题意识</button>
+            <button class="jbtn" data-j="1">作者观点</button>
+            <button class="jbtn" data-j="2">关键结论</button>
+          </div>
+          <div class="journey-panel">
+            <div class="scene" id="sceneBox"></div>
+            <div class="explain" id="explainBox"></div>
+          </div>
+        </div>
+
+        <div class="panel reveal" style="margin-top:18px">
+          <h3 style="margin:0 0 8px;font-size:28px">Mixed Reality 连续谱</h3>
+          <p class="muted" style="line-height:1.8">点击节点，快速理解本章如何把“真实世界”与“虚拟世界”放到同一个连续谱中。</p>
+          <div class="continuum">
+            <div class="track"></div>
+            <div class="label" style="--x:6%">真实世界</div>
+            <div class="label" style="--x:24%">Light AR</div>
+            <div class="label" style="--x:42%">Strong AR</div>
+            <div class="label" style="--x:60%">Deep AR</div>
+            <div class="label" style="--x:78%">Light VR</div>
+            <div class="label" style="--x:94%">Deep VR</div>
+            <button class="node active" style="--x:6%" data-n="0" aria-label="真实世界"></button>
+            <button class="node" style="--x:24%" data-n="1" aria-label="Light AR"></button>
+            <button class="node" style="--x:42%" data-n="2" aria-label="Strong AR"></button>
+            <button class="node" style="--x:60%" data-n="3" aria-label="Deep AR"></button>
+            <button class="node" style="--x:78%" data-n="4" aria-label="Light VR"></button>
+            <button class="node" style="--x:94%" data-n="5" aria-label="Deep VR"></button>
+          </div>
+          <div class="legend"><span>真实成分更多</span><span>虚拟成分更多</span></div>
+          <div class="mr-card">
+            <div class="box" id="mrBoxA"></div>
+            <div class="box" id="mrBoxB"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="wicked">
+      <div class="container">
+        <div class="reveal">
+          <h2 class="title">最后一跳：为什么又讲到 Wicked Problems？</h2>
+          <p class="sub">
+            因为作者最后想把设计拉到更大的层面：当设计不只是做产品，而是开始面对城市、环境、教育、公共服务、数字生活等复杂议题时，它就必须面对“复杂难题”。
+          </p>
+        </div>
+
+        <div class="problem-grid">
+          <div class="wicked-wheel reveal">
+            <div class="core"><strong>Wicked<br>Problems</strong><br><span class="small">没有唯一答案的复杂难题</span></div>
+            <div class="orbit-item">边界难定义</div>
+            <div class="orbit-item">没有终止规则</div>
+            <div class="orbit-item">没有标准答案</div>
+            <div class="orbit-item">每次介入都带后果</div>
+            <div class="orbit-item">必须持续调整</div>
+            <div class="orbit-item">每个问题都独特</div>
+          </div>
+          <div class="problem-panel reveal">
+            <h3 style="margin:0 0 8px;font-size:30px">点一点，读懂它为什么“棘手”</h3>
+            <p class="muted" style="line-height:1.8">下面是本章里最值得你在 발표 时提到的几个特征。点击每一项查看“人话版解释”。</p>
+            <div class="pills" id="pillWrap"></div>
+            <div class="explain-card" id="wickedExplain"></div>
+          </div>
+        </div>
+
+        <div class="ethics reveal">
+          <div class="ethic">
+            <h4>提高期待</h4>
+            <p>设计给人希望，但也可能让人以为“这个方案一定能解决问题”，因此需要克制和诚实。</p>
+          </div>
+          <div class="ethic">
+            <h4>虚假安全感</h4>
+            <p>看似高级的新方案可能掩盖风险，尤其在公共系统与数字技术中，设计师不能过度承诺。</p>
+          </div>
+          <div class="ethic">
+            <h4>紧迫感</h4>
+            <p>复杂问题往往很急，但“急”不代表可以草率。设计必须在行动与谨慎之间找到平衡。</p>
+          </div>
+          <div class="ethic">
+            <h4>方案混乱</h4>
+            <p>复杂问题很少只有一个“正确答案”。更重要的是不断测试、反馈、修正，并承担后果。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="recap">
+      <div class="container">
+        <div class="reveal">
+          <h2 class="title">一页复盘：把整章压缩成 5 个结论</h2>
+          <p class="sub">如果你明天要发表，下面这 5 个卡片就是你的“最小可讲版本”。</p>
+        </div>
+
+        <div class="recap-grid">
+          <div class="recap reveal"><b>1. 设计的定义变了</b><span>设计不只是造型，而是解决问题与创造体验。</span></div>
+          <div class="recap reveal"><b>2. 设计的对象变了</b><span>从产品转向服务、体验、系统与关系。</span></div>
+          <div class="recap reveal"><b>3. 设计的角色变了</b><span>设计师从作者转向协调者、组织者、团队成员。</span></div>
+          <div class="recap reveal"><b>4. VR/AR 是案例</b><span>技术只有被设计成自然体验，才会真正进入生活。</span></div>
+          <div class="recap reveal"><b>5. 设计的责任变了</b><span>设计面对复杂社会问题时，必须考虑伦理与后果。</span></div>
+        </div>
+
+        <div class="question-box reveal" id="question">
+          <h3>一个很简单的开放性问题</h3>
+          <p>
+            <strong>如果未来 VR/AR 真的全面进入日常生活，设计师最应该优先考虑的是：技术效果、用户体验，还是社会伦理？为什么？</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      交互网页由 ChatGPT 根据 Chapter 4 内容整理制作。风格参考了 Taste-Skill 的“高质感布局 + 动效 + 非模板化表达”思路，但本页面为纯 HTML / CSS / JS 独立实现。
+    </div>
+  </div>
+
+  <script>
+    const paradigms = [
+      {
+        title:'去物质化',
+        desc:'设计的重心从“物本身”慢慢转向“使用体验、服务系统与无形价值”。不是说物消失了，而是说价值越来越常常来自你怎样使用它、怎样体验它、怎样被它服务。',
+        tags:['从产品到体验','从占有到使用','服务设计','UX','可持续'],
+        example:'例如：听音乐从买 CD 变成用 Spotify；租房从拥有房产转向平台化使用；家具 App 让你先在家里预览摆放效果。设计不再只设计“东西”，而是设计“使用方式”。'
+      },
+      {
+        title:'跨学科 / 超学科',
+        desc:'复杂问题很少能靠单一专业解决。设计需要与工程、商业、心理学、社会学、教育、政策等领域协作。更进一步，设计不只是“大家合作”，而是通过合作生成新的知识和新的解决方式。',
+        tags:['多学科','跨学科','超学科','团队协作','设计领导力'],
+        example:'例如：设计一个智慧医院空间，不能只有室内设计师，还需要医生、病患、设备工程师、IT 团队与管理者共同参与。设计师像“组织者”和“翻译者”。'
+      },
+      {
+        title:'用户成为主角',
+        desc:'用户不再只是被访谈、被观察、被测试的人，而是能够从前期就参与到问题定义与方案生成之中的共同设计者。设计从“我为你设计”，走向“我和你一起设计”。',
+        tags:['参与式设计','共同设计','用户中心','人本设计','情感设计'],
+        example:'例如：做校园空间，不是先画好方案再让学生适应，而是让学生在前期就说出他们真正需要什么，再把这些需要转化为设计判断。'
+      },
+      {
+        title:'软方法论',
+        desc:'现实问题往往是流动的、模糊的、会变化的。设计过程不能只靠固定步骤，而要允许重新理解问题、不断试验、迭代与修正。双钻模型和设计思维就是典型例子。',
+        tags:['Double Diamond','Design Thinking','迭代','发散/收敛','问题重构'],
+        example:'例如：一个空间“不好用”，表面可能像是家具配置问题，深入后却发现是照明、动线、社交方式、课程结构共同造成的。真正的问题常常不是一开始看到的问题。'
+      }
+    ];
+
+    const tabPanel = document.getElementById('tabPanel');
+    const tabBtns = [...document.querySelectorAll('.tab-btn')];
+    function renderTab(i){
+      const item = paradigms[i];
+      tabPanel.innerHTML = `
+        <h3>${item.title}</h3>
+        <p>${item.desc}</p>
+        <div class="tag-row">${item.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="example-box"><strong>怎么用“人话”讲给别人听？</strong><span class="muted">${item.example}</span></div>
+      `;
+      tabBtns.forEach((b,idx)=>b.classList.toggle('active',idx===i));
+    }
+    tabBtns.forEach(btn=>btn.addEventListener('click', ()=>renderTab(+btn.dataset.tab)));
+    renderTab(0);
+
+    const journey = [
+      {
+        scene:`<h3 style="margin:0 0 10px;font-size:30px">作者先问了一个问题</h3>
+          <p class="muted" style="line-height:1.86">VR/AR 在电影里已经存在很久了，技术听起来也很先进，但为什么它还没有完全成为每个人的日常？为什么很多应用看起来还像“演示”，而不是“生活的一部分”？</p>`,
+        explain:`<h3 style="margin:0 0 10px;font-size:30px">问题不在“有没有技术”</h3>
+          <p class="muted" style="line-height:1.86">作者认为，单纯技术成熟并不足以改变社会。真正关键的是：有没有被设计成一种自然、实用、被人接受的交互体验。</p>`
+      },
+      {
+        scene:`<h3 style="margin:0 0 10px;font-size:30px">作者的核心判断</h3>
+          <p class="muted" style="line-height:1.86">设计并不是简单去“制造一个界面”，而是去唤起、引导和塑造新的行为与习惯。只要这种互动体验还没被真正识别出来，VR/AR 就很难深度进入生活。</p>`,
+        explain:`<h3 style="margin:0 0 10px;font-size:30px">所以 VR/AR 是设计问题</h3>
+          <p class="muted" style="line-height:1.86">设计师要思考的不是“功能塞得够不够多”，而是“用户为什么要用”“在哪种场景中它真的有意义”“它会不会让生活更自然而不是更累赘”。</p>`
+      },
+      {
+        scene:`<h3 style="margin:0 0 10px;font-size:30px">最值得 발표 时讲的一句</h3>
+          <p class="muted" style="line-height:1.86">VR/AR 的意义不在于“技术炫酷”，而在于它让设计进入了一个更复杂的场域：真实与虚拟如何融合，人该如何感知、理解并信任这种融合。</p>`,
+        explain:`<h3 style="margin:0 0 10px;font-size:30px">顺势连接全章</h3>
+          <p class="muted" style="line-height:1.86">这样，VR/AR 就不再是本章的“突然插入”，而是本章核心观点的证明：21世纪设计已经从做物品，走向设计体验、系统与社会关系。</p>`
+      }
+    ];
+    const sceneBox = document.getElementById('sceneBox');
+    const explainBox = document.getElementById('explainBox');
+    const jBtns = [...document.querySelectorAll('.jbtn')];
+    function renderJourney(i){
+      sceneBox.innerHTML = journey[i].scene;
+      explainBox.innerHTML = journey[i].explain;
+      jBtns.forEach((b,idx)=>b.classList.toggle('active',idx===i));
+    }
+    jBtns.forEach(btn=>btn.addEventListener('click',()=>renderJourney(+btn.dataset.j)));
+    renderJourney(0);
+
+    const mrData = [
+      {
+        aTitle:'真实世界',
+        aText:'几乎不使用虚拟叠加。交互主要发生在真实的物理产品、空间或工具中。',
+        bTitle:'你可以怎么记',
+        bText:'越靠左，越“真实”；越靠右，越“虚拟”。这是作者理解 Mixed Reality 的起点。',
+        examples:['普通家具与日常器物','纯物理空间体验','无数字叠加的产品']
+      },
+      {
+        aTitle:'Light AR',
+        aText:'通过手机、平板等“窗口”把虚拟信息叠加到真实环境中，但互动较轻。',
+        bTitle:'典型场景',
+        bText:'适合预览、补充、说明。例如预览家具摆放、查看商品附加信息。',
+        examples:['IKEA 家具预览','包装上的信息增强','手机端 AR 展示']
+      },
+      {
+        aTitle:'Strong AR',
+        aText:'不只是叠加信息，而是会根据真实场景持续变化，形成较强互动。',
+        bTitle:'典型场景',
+        bText:'真实世界成为交互输入的一部分，虚拟内容会被实时更新。',
+        examples:['Pokemon Go','AR 导航','基于环境识别的互动应用']
+      },
+      {
+        aTitle:'Deep AR',
+        aText:'虚拟界面更深入地占据视野，用户持续在真实环境中与数字层互动。',
+        bTitle:'典型场景',
+        bText:'需要更强的显示设备，如透明眼镜、头显、HUD 等。',
+        examples:['HoloLens','AR HUD 车载显示','工业维修辅助']
+      },
+      {
+        aTitle:'Light VR',
+        aText:'用户大部分视野已被数字界面占据，但现实场景可能仍通过摄像头被重新投射。',
+        bTitle:'典型场景',
+        bText:'现实被“数字化地看见”，AR 与 VR 的边界开始变得模糊。',
+        examples:['头显中的 pass-through','部分沉浸式训练','带摄像头透视的头显']
+      },
+      {
+        aTitle:'Deep VR',
+        aText:'用户完全沉浸在虚拟环境中，现实世界基本退出视野。',
+        bTitle:'典型场景',
+        bText:'最典型的是游戏、虚拟参观、仿真训练、远程临场。',
+        examples:['VR 游戏','虚拟展览','模拟训练 / telepresence']
+      }
+    ];
+    const mrNodes = [...document.querySelectorAll('.node')];
+    const mrBoxA = document.getElementById('mrBoxA');
+    const mrBoxB = document.getElementById('mrBoxB');
+    function renderMR(i){
+      const item = mrData[i];
+      mrBoxA.innerHTML = `<h4>${item.aTitle}</h4><p>${item.aText}</p>`;
+      mrBoxB.innerHTML = `<h4>${item.bTitle}</h4><p>${item.bText}</p><div class="mini-list">${item.examples.map(e=>`<div>${e}</div>`).join('')}</div>`;
+      mrNodes.forEach((n,idx)=>n.classList.toggle('active', idx===i));
+    }
+    mrNodes.forEach(n=>n.addEventListener('click',()=>renderMR(+n.dataset.n)));
+    renderMR(0);
+
+    const wickedItems = [
+      {
+        title:'边界难定义',
+        text:'复杂问题往往连“问题到底是什么”都说不清。你以为在解决 A，深入后可能发现真正的问题是 B。'
+      },
+      {
+        title:'没有终止规则',
+        text:'它不是“修好就结束”的问题。很多社会问题只能被改善、减轻、重新调整，很难彻底终结。'
+      },
+      {
+        title:'没有标准答案',
+        text:'这类问题不存在像数学题那样唯一正确的解。能得到的通常只是“相对更合适”的方案。'
+      },
+      {
+        title:'每次介入都带后果',
+        text:'任何方案一旦实施，就会影响真实世界，并可能产生新的副作用。设计不是零成本试验。'
+      },
+      {
+        title:'必须持续调整',
+        text:'方案推出后还要观察反馈，不断修正。理解问题与解决问题，通常是同时进行、循环推进的。'
+      },
+      {
+        title:'每个问题都独特',
+        text:'不同城市、不同学校、不同社区，即使表面相似，实际情境和利益关系也不同，不能机械复制。'
+      },
+      {
+        title:'设计有伦理责任',
+        text:'因为设计方案会影响他人生活，所以设计师不能只追求创意或效率，还要考虑公平、风险与长期后果。'
+      }
+    ];
+    const pillWrap = document.getElementById('pillWrap');
+    const wickedExplain = document.getElementById('wickedExplain');
+    function renderWicked(i){
+      wickedExplain.innerHTML = `<h4>${wickedItems[i].title}</h4><p>${wickedItems[i].text}</p>`;
+      [...pillWrap.children].forEach((el,idx)=>el.classList.toggle('active', idx===i));
+    }
+    wickedItems.forEach((it,idx)=>{
+      const btn = document.createElement('button');
+      btn.className='pill' + (idx===0?' active':'');
+      btn.textContent=it.title;
+      btn.addEventListener('click',()=>renderWicked(idx));
+      pillWrap.appendChild(btn);
+    });
+    renderWicked(0);
+
+    const reveals = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){entry.target.classList.add('visible');}
+      })
+    },{threshold:.12});
+    reveals.forEach(el=>io.observe(el));
+
+    const progress = document.getElementById('progress');
+    const dots = [...document.querySelectorAll('.dot')];
+    const sections = dots.map(d=>document.querySelector(d.getAttribute('href')));
+    function onScroll(){
+      const h = document.documentElement;
+      const scrolled = (h.scrollTop)/(h.scrollHeight - h.clientHeight) * 100;
+      progress.style.width = scrolled + '%';
+      let current = 0;
+      sections.forEach((sec,idx)=>{
+        if(sec.getBoundingClientRect().top <= window.innerHeight*0.38) current = idx;
+      });
+      dots.forEach((d,idx)=>d.classList.toggle('active', idx===current));
+    }
+    window.addEventListener('scroll', onScroll);
+    onScroll();
+  </script>
+</body>
+</html>
+
